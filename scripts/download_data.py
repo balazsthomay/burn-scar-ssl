@@ -17,6 +17,19 @@ GDRIVE_FILE_ID = "1yFDNlGqGPxkc9lh9l1O70TuejXAQYYtC"
 GDRIVE_URL = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
 
 
+def cleanup_macos_artifacts(dataset_path: Path) -> None:
+    """Remove macOS resource fork files (._* prefix) from the dataset."""
+    data_dir = dataset_path / "data"
+    if not data_dir.is_dir():
+        return
+
+    artifacts = list(data_dir.glob("._*"))
+    if artifacts:
+        print(f"Cleaning up {len(artifacts)} macOS resource fork files...")
+        for f in artifacts:
+            f.unlink()
+
+
 def download_hls_burn_scars(output_dir: Path) -> Path:
     """Download and extract the HLS Burn Scars dataset.
 
@@ -42,8 +55,11 @@ def download_hls_burn_scars(output_dir: Path) -> Path:
     if not dataset_path.is_dir():
         print(f"Extracting to {dataset_path}...")
         with tarfile.open(archive_path, "r:gz") as tar:
-            tar.extractall(path=output_dir)
+            tar.extractall(path=output_dir, filter="data")
         print("Extraction complete!")
+
+        # Clean up macOS resource fork files (._* prefix)
+        cleanup_macos_artifacts(dataset_path)
     else:
         print(f"Dataset already extracted: {dataset_path}")
 
@@ -68,9 +84,9 @@ def verify_dataset(dataset_path: Path) -> None:
     if not splits_dir.is_dir():
         raise FileNotFoundError(f"Splits directory not found: {splits_dir}")
 
-    # Count files
-    images = list(data_dir.glob("*_merged.tif"))
-    masks = list(data_dir.glob("*.mask.tif"))
+    # Count files (exclude macOS resource fork files starting with ._)
+    images = [f for f in data_dir.glob("*_merged.tif") if not f.name.startswith("._")]
+    masks = [f for f in data_dir.glob("*.mask.tif") if not f.name.startswith("._")]
 
     print(f"Data directory: {data_dir}")
     print(f"  Images (*_merged.tif): {len(images)}")
