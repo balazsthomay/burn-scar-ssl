@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Claude Code
+CLAUDE.md
+.claude/
+thoughts/
+
+# Data and artifacts (root level only)
+/data/
+/checkpoints/
+/wandb/
+/outputs/
+
+# Environment
+.env
+*.env.local
