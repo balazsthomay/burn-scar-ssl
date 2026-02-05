@@ -136,18 +136,20 @@ def create_trainer(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Callbacks
+    # Note: TerraTorch logs metrics with "/" prefix (e.g., "val/loss", "val/mIoU")
     callbacks = [
         RichProgressBar(),
         ModelCheckpoint(
             dirpath=output_dir / "checkpoints",
-            filename="{epoch}-{val_loss:.4f}-{val_Multiclass_Jaccard_Index:.4f}",
-            monitor="val_loss",
+            filename="epoch{epoch:02d}-loss{val/loss:.4f}-iou{val/mIoU:.4f}",
+            monitor="val/loss",
             mode="min",
             save_top_k=3,
             save_last=True,
+            auto_insert_metric_name=False,
         ),
         EarlyStopping(
-            monitor="val_loss",
+            monitor="val/loss",
             mode="min",
             patience=early_stopping_patience,
             min_delta=0.0001,
