@@ -1,0 +1,43 @@
+# Baseline configuration for Prithvi-EO-2.0-300M on HLS Burn Scars
+# Target: Reproduce ~87% IoU on burn scar class (official baseline)
+
+name: prithvi-300m-baseline-full-labels
+project: burn-scar-ssl
+output_dir: outputs/baseline
+seed: 42
+
+data:
+  dataset_path: data/hls_burn_scars
+  batch_size: 8
+  num_workers: 4
+
+model:
+  backbone: prithvi_eo_v2_300
+  pretrained: true
+  img_size: 512
+  decoder_channels: [512, 256, 128, 64]
+  head_dropout: 0.1
+
+training:
+  # Optimization
+  lr: 1.0e-4
+  weight_decay: 0.05
+  max_epochs: 100
+  early_stopping_patience: 15
+
+  # Loss
+  loss: ce  # Cross-entropy with ignore_index=-1
+  class_weights: null  # Could use [0.1, 0.9] for class imbalance
+
+  # Freezing (start unfrozen for full fine-tuning)
+  freeze_backbone: false
+  freeze_decoder: false
+
+  # Hardware
+  precision: "16-mixed"  # Mixed precision for faster training on CUDA
+  accelerator: gpu  # Use CUDA GPU
+  devices: 1
+
+  # Logging
+  log_every_n_steps: 10
+  use_wandb: true
