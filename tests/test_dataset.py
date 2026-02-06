@@ -270,3 +270,32 @@ class TestDataModuleWithData:
         # These are the sizes from the downloaded dataset
         assert len(datamodule.train_dataset) == 524
         assert len(datamodule.val_dataset) == 160
+
+    def test_custom_train_split_file(self):
+        """DataModule should support custom train split file."""
+        # Use the 10% subset (52 samples)
+        dm = HLSBurnScarsDataModule(
+            dataset_path=DATASET_PATH,
+            batch_size=2,
+            num_workers=0,
+            train_split_file="train_10pct.txt",
+        )
+        datamodule = dm.build()
+        datamodule.setup("fit")
+
+        assert len(datamodule.train_dataset) == 52
+        # Val should remain unchanged
+        assert len(datamodule.val_dataset) == 160
+
+    def test_custom_train_split_5pct(self):
+        """DataModule should load 5% subset correctly."""
+        dm = HLSBurnScarsDataModule(
+            dataset_path=DATASET_PATH,
+            batch_size=2,
+            num_workers=0,
+            train_split_file="train_5pct.txt",
+        )
+        datamodule = dm.build()
+        datamodule.setup("fit")
+
+        assert len(datamodule.train_dataset) == 26
