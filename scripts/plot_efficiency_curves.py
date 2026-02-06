@@ -42,9 +42,29 @@ BACKBONE_LABELS = {
 
 
 def load_results(results_path: Path) -> list[dict]:
-    """Load results from JSON file."""
-    with open(results_path) as f:
-        return json.load(f)
+    """Load results from JSON or by collecting individual result.json files.
+
+    If results_path is a JSON file, load it directly.
+    Also scans the parent directory for individual result.json files
+    and merges them in, so we never depend solely on all_results.json.
+    """
+    results = {}
+    result_key = lambda r: (r["backbone"], r["fraction"], r["seed"])
+
+    # Load aggregated file if it exists
+    if results_path.exists():
+        with open(results_path) as f:
+            for r in json.load(f):
+                results[result_key(r)] = r
+
+    # Collect from individual result.json files (these are authoritative)
+    phase2_dir = results_path.parent
+    for result_file in phase2_dir.rglob("result.json"):
+        with open(result_file) as f:
+            r = json.load(f)
+            results[result_key(r)] = r
+
+    return list(results.values())
 
 
 def aggregate_results(results: list[dict]) -> dict:
