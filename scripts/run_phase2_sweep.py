@@ -245,11 +245,17 @@ def run_single_experiment(
     test_metrics = test_results[0] if test_results else {}
     best_ckpt = trainer.checkpoint_callback.best_model_path
 
+    # TerraTorch logs as "test/IoU_Burn scar", custom module logs as "test/iou_class1"
+    test_iou_burn = test_metrics.get(
+        "test/IoU_Burn scar",
+        test_metrics.get("test/iou_class1", 0.0),
+    )
+
     result = ExperimentResult(
         backbone=backbone,
         fraction=fraction,
         seed=seed,
-        test_iou_burn=test_metrics.get("test/iou_class1", 0.0),
+        test_iou_burn=test_iou_burn,
         test_miou=test_metrics.get("test/mIoU", 0.0),
         val_loss=float(trainer.checkpoint_callback.best_model_score or 0),
         epochs_trained=trainer.current_epoch,
@@ -373,10 +379,21 @@ def main():
         except Exception as e:
             console.print(f"[red]✗[/red] Failed: {e}")
 
-    # Save all results
-    all_results = [r.__dict__ for r in results]
-    with open(output_dir / "all_results.json", "w") as f:
-        json.dump(all_results, f, indent=2)
+    # Save all results (merge with existing to support per-experiment invocations)
+    results_file = output_dir / "all_results.json"
+    existing_results = []
+    if results_file.exists():
+        with open(results_file) as f:
+            existing_results = json.load(f)
+
+    # Key by (backbone, fraction, seed) to deduplicate
+    result_key = lambda r: (r["backbone"], r["fraction"], r["seed"])
+    merged = {result_key(r): r for r in existing_results}
+    for r in results:
+        merged[result_key(r.__dict__)] = r.__dict__
+
+    with open(results_file, "w") as f:
+        json.dump(list(merged.values()), f, indent=2)
 
     console.print(f"\n[green]Completed {len(results)}/{len(experiments)} experiments[/green]")
     console.print(f"Results saved to {output_dir / 'all_results.json'}")
