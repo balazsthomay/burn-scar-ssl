@@ -1,0 +1,43 @@
+# Phase 3: Semi-Supervised Learning (FixMatch + EMA Teacher)
+# Recovers label efficiency gap using pseudo-labels from unlabeled data.
+#
+# Baseline (Phase 2): Prithvi-EO-2.0 at 10% labels → 0.692 IoU (burn scar)
+# Target: 0.77–0.82 IoU at 10% labels via SSL
+
+experiment:
+  name: "phase3-ssl-fixmatch"
+  project: "burn-scar-ssl"
+  output_dir: "outputs/phase3"
+  seed: 42
+
+data:
+  dataset_path: "data/hls_burn_scars"
+  labeled_split_file: "train_10pct.txt"
+  batch_size_labeled: 8
+  batch_size_unlabeled: 8
+  num_workers: 4
+
+model:
+  backbone: "prithvi_eo_v2_300"
+  pretrained: true
+  img_size: 512
+  decoder_channels: [512, 256, 128, 64]
+  head_dropout: 0.1
+
+ssl:
+  tau: 0.95          # Pseudo-label confidence threshold
+  lambda_u: 1.0      # Unsupervised loss weight
+  ema_decay: 0.999   # EMA teacher decay
+  warmup_epochs: 5   # Supervised-only warmup before introducing pseudo-labels
+
+training:
+  max_epochs: 100
+  early_stopping_patience: 15
+  lr_backbone: 1.0e-5
+  lr_decoder: 1.0e-4
+  weight_decay: 0.05
+  precision: "16-mixed"
+  accelerator: "auto"
+  devices: 1
+  log_every_n_steps: 10
+  use_wandb: true
