@@ -92,6 +92,11 @@ class DINOv3Backbone(nn.Module):
             config = AutoConfig.from_pretrained(model_name)
             self.model = AutoModel.from_config(config)
 
+        # Ensure all parameters are trainable (HF loads in eval mode)
+        self.model.train()
+        for param in self.model.parameters():
+            param.requires_grad = True
+
         # Adapt for 6-band input
         if in_channels != 3:
             adapt_patch_embedding(self.model, in_channels)
