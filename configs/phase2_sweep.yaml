@@ -1,0 +1,59 @@
+# Phase 2: Label Efficiency Sweep Configuration
+# Measures performance degradation across backbones with fewer labels
+
+experiment:
+  name: "label-efficiency-phase2"
+  project: "burn-scar-ssl"
+  output_dir: "outputs/phase2"
+  seeds: [42, 123, 456]
+
+# Label fractions to test (100% uses train.txt, others use train_Npct.txt)
+subsets:
+  fractions: [0.05, 0.10, 0.25, 0.50, 1.0]
+
+# Backbone configurations
+backbones:
+  - name: prithvi_eo_v2_300
+    type: terratorch
+    # Uses existing BurnScarSegmentationTask from trainer.py
+
+  - name: dinov3_vitl16_sat
+    type: custom
+    model_name: facebook/dinov3-vitl16-pretrain-sat493m
+
+  - name: resnet50
+    type: custom
+    # Uses ImageNet V2 pretrained weights
+
+# Data configuration
+data:
+  dataset_path: "data/hls_burn_scars"
+  batch_size: 8
+  num_workers: 4
+
+# Training configuration (same for all experiments)
+training:
+  max_epochs: 50
+  early_stopping_patience: 10
+  lr: 1.0e-4
+  weight_decay: 0.05
+  loss: "ce"
+  precision: "16-mixed"
+  accelerator: "auto"
+  devices: 1
+  log_every_n_steps: 10
+  use_wandb: true
+
+# Model-specific overrides
+model_overrides:
+  prithvi_eo_v2_300:
+    decoder_channels: [512, 256, 128, 64]
+    head_dropout: 0.1
+
+  dinov3_vitl16_sat:
+    decoder_channels: 256
+    head_dropout: 0.1
+
+  resnet50:
+    decoder_channels: 256
+    head_dropout: 0.1

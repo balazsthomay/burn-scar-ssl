@@ -45,6 +45,7 @@ class HLSBurnScarsDataModule:
         train_transform: list | None = None,
         val_transform: list | None = None,
         test_transform: list | None = None,
+        train_split_file: str | Path | None = None,
     ):
         """Initialize the HLS Burn Scars data module.
 
@@ -55,10 +56,13 @@ class HLSBurnScarsDataModule:
             train_transform: Optional custom train transforms (albumentations).
             val_transform: Optional custom validation transforms.
             test_transform: Optional custom test transforms.
+            train_split_file: Optional custom train split file (e.g., train_10pct.txt).
+                If None, uses default train.txt.
         """
         self.dataset_path = Path(dataset_path)
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.train_split_file = Path(train_split_file) if train_split_file else None
 
         # Default transforms if not provided
         if train_transform is None:
@@ -114,6 +118,16 @@ class HLSBurnScarsDataModule:
         data_dir = self.dataset_path / "data"
         splits_dir = self.dataset_path / "splits"
 
+        # Determine train split file
+        if self.train_split_file is not None:
+            # If absolute path, use directly; otherwise resolve relative to splits_dir
+            if self.train_split_file.is_absolute():
+                train_split = self.train_split_file
+            else:
+                train_split = splits_dir / self.train_split_file
+        else:
+            train_split = splits_dir / "train.txt"
+
         self._datamodule = terratorch.datamodules.GenericNonGeoSegmentationDataModule(
             batch_size=self.batch_size,
             num_workers=self.num_workers,
@@ -126,7 +140,7 @@ class HLSBurnScarsDataModule:
             test_data_root=data_dir,
             test_label_data_root=data_dir,
             # Split files
-            train_split=splits_dir / "train.txt",
+            train_split=train_split,
             val_split=splits_dir / "val.txt",
             test_split=splits_dir / "test.txt",
             # File patterns
