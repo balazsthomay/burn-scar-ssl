@@ -30,9 +30,9 @@ declare -a NAMES=(
     "main_25pct"
 )
 declare -a ARGS=(
-    "--no-wandb"
-    "--no-ema --no-wandb"
-    "--label-fraction 0.25 --no-wandb"
+    ""
+    "--no-ema"
+    "--label-fraction 0.25"
 )
 declare -a DESCRIPTIONS=(
     "Main: 10% labels, full FixMatch+EMA+CutMix"
