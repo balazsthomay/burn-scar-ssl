@@ -14,15 +14,17 @@ import rasterio
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from src.data.dataset import BAND_MEANS, BAND_NAMES, BAND_STDS, HLSBurnScarsDataModule
+from src.data.dataset import BAND_NAMES, HLSBurnScarsDataModule
 from src.data.transforms import get_strong_transforms, get_val_transforms, get_weak_transforms
 
 
 class DualViewDataset(Dataset):
     """Dataset that returns both weak and strong augmented views of each image.
 
-    Reads GeoTIFFs directly with rasterio, normalizes by band-specific
-    statistics, and applies both augmentation pipelines to the same image.
+    Reads GeoTIFFs directly with rasterio and applies both augmentation
+    pipelines to the same image. No explicit normalization is applied — this
+    matches TerraTorch's GenericNonGeoSegmentationDataModule which also passes
+    raw pixel values (its Normalize class is created but never called).
 
     For labeled samples, also returns the mask. For unlabeled samples,
     the mask is omitted.
@@ -51,28 +53,25 @@ class DualViewDataset(Dataset):
         self.strong_pipeline = albumentations.Compose(strong_transforms)
         self.labeled = labeled
 
-        self.means = np.array(BAND_MEANS, dtype=np.float32)
-        self.stds = np.array(BAND_STDS, dtype=np.float32)
-
     def __len__(self) -> int:
         return len(self.sample_ids)
 
     def _load_image(self, sample_id: str) -> np.ndarray:
-        """Load and normalize a multi-band GeoTIFF image.
+        """Load a multi-band GeoTIFF image.
+
+        No normalization is applied — raw pixel values are passed through,
+        matching TerraTorch's data pipeline used for val/test.
 
         Returns:
-            Image array of shape (H, W, C), normalized and with no-data replaced by 0.
+            Image array of shape (H, W, C), with no-data replaced by 0.
         """
         img_path = self.data_dir / f"subsetted_512x512_HLS.S30.{sample_id}.4_merged.tif"
         with rasterio.open(img_path) as src:
-            # rasterio reads as (C, H, W), transpose to (H, W, C) for albumentations
+            # rasterio reads as (C, H, W)
             image = src.read().astype(np.float32)
 
         # Replace NaN/inf with 0
         image = np.nan_to_num(image, nan=0.0, posinf=0.0, neginf=0.0)
-
-        # Normalize per-band: (C, H, W) format for broadcasting
-        image = (image - self.means[:, None, None]) / (self.stds[:, None, None] + 1e-10)
 
         # Transpose to (H, W, C) for albumentations
         image = image.transpose(1, 2, 0)

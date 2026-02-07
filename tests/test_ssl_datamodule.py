@@ -187,8 +187,12 @@ class TestDualViewDataset:
 
         assert any_diff, "Strong and weak views should differ at least sometimes"
 
-    def test_image_is_normalized(self, sample_data_dir):
-        """Image values should be roughly centered (not raw reflectance)."""
+    def test_image_values_are_raw(self, sample_data_dir):
+        """Image values should be raw pixel values (no normalization applied).
+
+        This matches TerraTorch's GenericNonGeoSegmentationDataModule which
+        also passes raw values — its Normalize class is created but never called.
+        """
         dataset_path, sample_ids, _ = sample_data_dir
         data_dir = dataset_path / "data"
 
@@ -202,9 +206,10 @@ class TestDualViewDataset:
 
         item = ds[0]
         img = item["image_weak"]
-        # After normalization, mean should be near 0 (roughly)
-        # Raw values were ~0.15, means are ~0.05-0.23, so normalized ~ -1 to 2
-        assert img.abs().mean() < 10.0, "Normalized values should be reasonable"
+        # Fixture data is rand()*0.3, so values should be in [0, 0.3] range
+        # (before any photometric augmentation from strong transforms)
+        assert img.min() >= -0.1, "Raw values should not be strongly negative"
+        assert img.max() < 1.0, "Raw values should be in reflectance range"
 
 
 # ---------------------------------------------------------------------------
