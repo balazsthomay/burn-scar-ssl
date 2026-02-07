@@ -13,8 +13,8 @@ experiment:
 data:
   dataset_path: "data/hls_burn_scars"
   labeled_split_file: "train_10pct.txt"
-  batch_size_labeled: 8
-  batch_size_unlabeled: 8
+  batch_size_labeled: 4
+  batch_size_unlabeled: 4
   num_workers: 4
 
 model:

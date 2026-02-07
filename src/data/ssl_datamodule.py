@@ -100,10 +100,11 @@ class DualViewDataset(Dataset):
             mask = self._load_mask(sample_id)
             weak = self.weak_pipeline(image=image, mask=mask)
             strong = self.strong_pipeline(image=image, mask=mask)
+            mask = torch.from_numpy(weak["mask"]) if isinstance(weak["mask"], np.ndarray) else weak["mask"]
             return {
                 "image_weak": weak["image"],
                 "image_strong": strong["image"],
-                "mask": torch.from_numpy(weak["mask"]) if isinstance(weak["mask"], np.ndarray) else weak["mask"],
+                "mask": mask.long(),
             }
         else:
             weak = self.weak_pipeline(image=image)

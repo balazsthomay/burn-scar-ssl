@@ -97,6 +97,7 @@ class FixMatchSegmentationTask(pl.LightningModule):
 
         # Build teacher as a deep copy of student, no gradients
         self.teacher = copy.deepcopy(self.student)
+        self.teacher.eval()
         for param in self.teacher.parameters():
             param.requires_grad = False
 
