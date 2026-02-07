@@ -1,0 +1,35 @@
+# Phase 4: PEFT (LoRA/DoRA) Configuration
+# Parameter-efficient fine-tuning of Prithvi-EO-2.0-300M
+
+project: "burn-scar-ssl"
+output_dir: "outputs/phase4"
+seed: 42
+
+backbone: "prithvi_eo_v2_300"
+img_size: 512
+
+# PEFT adapter configuration
+peft:
+  method: "lora"
+  rank: 8
+  alpha: 16
+  target_modules: ["q_linear", "v_linear"]
+  lora_dropout: 0.1
+  replace_qkv: "qkv"
+
+# Data configuration (same as Phase 2)
+data:
+  dataset_path: "data/hls_burn_scars"
+  batch_size: 8
+  num_workers: 4
+
+# Training configuration (same as Phase 2)
+training:
+  max_epochs: 50
+  early_stopping_patience: 10
+  lr: 1.0e-4
+  weight_decay: 0.05
+  precision: "16-mixed"
+  accelerator: "auto"
+  devices: 1
+  log_every_n_steps: 10

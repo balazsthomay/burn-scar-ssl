@@ -35,6 +35,7 @@ def build_prithvi_segmentation_model(
     decoder_channels: list[int] | None = None,
     head_dropout: float = 0.1,
     drop_path_rate: float = 0.0,
+    peft_config: dict | None = None,
 ) -> torch.nn.Module:
     """Build a Prithvi-based segmentation model.
 
@@ -50,6 +51,10 @@ def build_prithvi_segmentation_model(
             Defaults to [512, 256, 128, 64].
         head_dropout: Dropout rate for the segmentation head.
         drop_path_rate: Stochastic depth rate for backbone.
+        peft_config: Optional PEFT configuration dict for parameter-efficient
+            fine-tuning. Passed directly to EncoderDecoderFactory.build_model().
+            Expected keys: "method" (e.g. "LORA"), "replace_qkv" (e.g. "qkv"),
+            "peft_config_kwargs" (e.g. {"r": 8, "lora_alpha": 16, ...}).
 
     Returns:
         Configured segmentation model.
@@ -88,6 +93,8 @@ def build_prithvi_segmentation_model(
         # Head configuration
         head_dropout=head_dropout,
         num_classes=num_classes,
+        # PEFT configuration (LoRA/DoRA)
+        peft_config=peft_config,
     )
 
     return model
