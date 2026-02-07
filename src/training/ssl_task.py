@@ -22,6 +22,13 @@ import torch.nn.functional as F
 from src.models.prithvi import build_prithvi_segmentation_model
 
 
+def _extract_logits(output: torch.Tensor) -> torch.Tensor:
+    """Extract raw logits from model output, handling TerraTorch's ModelOutput wrapper."""
+    if hasattr(output, "output"):
+        return output.output
+    return output
+
+
 class FixMatchSegmentationTask(pl.LightningModule):
     """FixMatch + EMA Teacher for semi-supervised semantic segmentation.
 
@@ -97,7 +104,7 @@ class FixMatchSegmentationTask(pl.LightningModule):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass through the student model."""
-        return self.student(x)
+        return _extract_logits(self.student(x))
 
     @torch.no_grad()
     def _generate_pseudo_labels(
@@ -112,7 +119,7 @@ class FixMatchSegmentationTask(pl.LightningModule):
             pseudo_labels: Argmax predictions (B, H, W).
             confidence_mask: Boolean mask where max probability >= tau (B, H, W).
         """
-        logits = self.teacher(images_weak)
+        logits = _extract_logits(self.teacher(images_weak))
         probs = F.softmax(logits, dim=1)
         max_probs, pseudo_labels = probs.max(dim=1)
         confidence_mask = max_probs >= self.tau
@@ -192,7 +199,7 @@ class FixMatchSegmentationTask(pl.LightningModule):
         labeled_strong = labeled_batch["image_strong"]
         true_mask = labeled_batch["mask"]
 
-        student_logits_labeled = self.student(labeled_strong)
+        student_logits_labeled = _extract_logits(self.student(labeled_strong))
         loss_sup_per_pixel = self.loss_fn(student_logits_labeled, true_mask)
         loss_sup = loss_sup_per_pixel.mean()
 
@@ -212,7 +219,7 @@ class FixMatchSegmentationTask(pl.LightningModule):
             )
 
             # Student prediction on mixed strong augmentation
-            student_logits_unlabeled = self.student(mixed_strong)
+            student_logits_unlabeled = _extract_logits(self.student(mixed_strong))
             loss_unsup_per_pixel = self.loss_fn(student_logits_unlabeled, mixed_pseudo)
 
             # Mask by confidence
@@ -245,7 +252,7 @@ class FixMatchSegmentationTask(pl.LightningModule):
         images = batch["image"]
         masks = batch["mask"]
 
-        logits = self.student(images)
+        logits = _extract_logits(self.student(images))
         loss = F.cross_entropy(logits, masks, ignore_index=-1)
 
         preds = logits.argmax(dim=1)
