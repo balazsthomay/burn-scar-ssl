@@ -28,7 +28,7 @@ ssl:
   tau: 0.95          # Pseudo-label confidence threshold
   lambda_u: 1.0      # Unsupervised loss weight
   ema_decay: 0.999   # EMA teacher decay
-  warmup_epochs: 5   # Supervised-only warmup before introducing pseudo-labels
+  warmup_epochs: 10  # Supervised-only warmup before introducing pseudo-labels
 
 training:
   max_epochs: 100
