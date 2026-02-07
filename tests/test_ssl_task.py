@@ -382,13 +382,10 @@ class TestOptimizer:
         result = task.configure_optimizers()
         assert isinstance(result, torch.optim.AdamW)
 
-    def test_differential_lr_groups(self):
+    def test_uniform_lr(self):
         task = _make_task()
         optimizer = task.configure_optimizers()
 
-        # Should have 2 param groups
-        assert len(optimizer.param_groups) == 2
-
-        lrs = {pg["lr"] for pg in optimizer.param_groups}
-        assert 1e-5 in lrs
-        assert 1e-4 in lrs
+        # Single param group with lr_decoder (uniform LR, matching Phase 2)
+        for pg in optimizer.param_groups:
+            assert pg["lr"] == 1e-4

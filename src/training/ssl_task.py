@@ -196,11 +196,11 @@ class FixMatchSegmentationTask(pl.LightningModule):
         labeled_batch = batch["labeled"]
         unlabeled_batch = batch["unlabeled"]
 
-        # --- Supervised loss ---
-        labeled_strong = labeled_batch["image_strong"]
+        # --- Supervised loss (weak augmentation, matching Phase 2 baseline) ---
+        labeled_weak = labeled_batch["image_weak"]
         true_mask = labeled_batch["mask"]
 
-        student_logits_labeled = _extract_logits(self.student(labeled_strong))
+        student_logits_labeled = _extract_logits(self.student(labeled_weak))
         loss_sup_per_pixel = self.loss_fn(student_logits_labeled, true_mask)
         loss_sup = loss_sup_per_pixel.mean()
 
@@ -282,23 +282,9 @@ class FixMatchSegmentationTask(pl.LightningModule):
         return self._eval_step(batch, "test")
 
     def configure_optimizers(self):
-        # Differential learning rates: backbone gets lower LR
-        encoder_params = []
-        decoder_params = []
-
-        for name, param in self.student.named_parameters():
-            if not param.requires_grad:
-                continue
-            if "encoder" in name:
-                encoder_params.append(param)
-            else:
-                decoder_params.append(param)
-
         optimizer = torch.optim.AdamW(
-            [
-                {"params": encoder_params, "lr": self.lr_backbone},
-                {"params": decoder_params, "lr": self.lr_decoder},
-            ],
+            self.student.parameters(),
+            lr=self.lr_decoder,
             weight_decay=self.weight_decay,
         )
         return optimizer
