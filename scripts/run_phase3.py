@@ -29,6 +29,7 @@ from lightning.pytorch.loggers import TensorBoardLogger, WandbLogger
 from rich.console import Console
 
 from src.data.ssl_datamodule import SemiSupervisedDataModule
+from src.data.subset_generator import generate_stratified_subsets
 from src.training.ssl_task import FixMatchSegmentationTask
 
 console = Console()
@@ -120,6 +121,30 @@ def main():
         ssl_cfg["ema_decay"] = args.ema_decay
     if args.max_epochs is not None:
         train_cfg["max_epochs"] = args.max_epochs
+
+    # Ensure split file exists (generate if needed)
+    splits_dir = Path(data_cfg["dataset_path"]) / "splits"
+    split_file = splits_dir / data_cfg["labeled_split_file"]
+    if not split_file.exists():
+        console.print(f"[yellow]Split file {split_file} not found, generating...[/yellow]")
+        train_file = splits_dir / "train.txt"
+        train_samples = [
+            line.strip()
+            for line in train_file.read_text().strip().split("\n")
+            if line.strip()
+        ]
+        mask_dir = Path(data_cfg["dataset_path"]) / "data"
+        frac = int(
+            data_cfg["labeled_split_file"].replace("train_", "").replace("pct.txt", "")
+        ) / 100
+        generate_stratified_subsets(
+            train_samples=train_samples,
+            mask_dir=mask_dir,
+            fractions=[frac],
+            seed=seed,
+            output_dir=splits_dir,
+        )
+        console.print(f"[green]Generated {split_file}[/green]")
 
     # Experiment naming
     label_frac = data_cfg["labeled_split_file"].replace("train_", "").replace("pct.txt", "")
