@@ -240,6 +240,13 @@ def quantize_dynamic_int8(onnx_path: str | Path) -> Path:
             opt_level=1,
         )
         opt_model.save_model_to_file(str(optimized_path))
+
+        # The transformer optimizer can strip type metadata from intermediate
+        # nodes. Run shape inference to restore it before quantization.
+        opt_onnx = onnx.load(str(optimized_path))
+        opt_onnx = onnx.shape_inference.infer_shapes(opt_onnx)
+        onnx.save(opt_onnx, str(optimized_path))
+
         source_path = optimized_path
     except Exception:
         # Transformer optimizer may fail on non-standard ViT architectures
@@ -249,6 +256,7 @@ def quantize_dynamic_int8(onnx_path: str | Path) -> Path:
         model_input=str(source_path),
         model_output=str(quantized_path),
         weight_type=QuantType.QInt8,
+        extra_options={"DefaultTensorType": onnx.TensorProto.FLOAT},
     )
 
     # Clean up intermediate optimized model if it exists
