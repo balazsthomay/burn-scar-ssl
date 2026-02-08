@@ -18,6 +18,13 @@ echo "=========================================="
 echo "Phase 4: PEFT Sweep"
 echo "=========================================="
 
+# Generate subset split files if missing (needed for 10% experiment)
+if [ ! -f "data/hls_burn_scars/splits/train_10pct.txt" ]; then
+    echo ""
+    echo "Generating stratified training subsets..."
+    uv run scripts/generate_subsets.py --seed "${SEED}"
+fi
+
 # Experiment 1: LoRA r=4, 100% labels
 echo ""
 echo "[1/5] LoRA r=4, alpha=8, 100% labels"

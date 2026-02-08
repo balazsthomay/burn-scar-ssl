@@ -268,7 +268,7 @@ def run_experiment(
         logger=logger,
         default_root_dir=str(exp_dir),
         log_every_n_steps=training_cfg["log_every_n_steps"],
-        enable_progress_bar=True,
+        enable_progress_bar=False,
     )
 
     # Train
