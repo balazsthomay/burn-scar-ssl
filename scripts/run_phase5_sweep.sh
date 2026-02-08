@@ -35,7 +35,7 @@ echo "================================================"
 # 1. Retrain full fine-tuned Prithvi @ 100% labels
 # ──────────────────────────────────────────────────
 FULL_FT_DIR="$OUTPUT_DIR/full_ft"
-FULL_FT_CKPT="$FULL_FT_DIR/prithvi_eo_v2_300/100pct/seed${SEED}/checkpoints/best.ckpt"
+FULL_FT_CKPT="outputs/phase2/prithvi_eo_v2_300/100pct/seed${SEED}/checkpoints/best.ckpt"
 
 if [ "$SKIP_TRAIN" = false ]; then
     echo ""
@@ -63,7 +63,7 @@ fi
 # 2. Retrain LoRA r=16 @ 100% labels
 # ──────────────────────────────────────────────────
 LORA_DIR="$OUTPUT_DIR/lora_r16"
-LORA_CKPT="$LORA_DIR/lora/r16/100pct/seed${SEED}/checkpoints/best.ckpt"
+LORA_CKPT="outputs/phase4/lora/r16/100pct/seed${SEED}/checkpoints/best.ckpt"
 
 if [ "$SKIP_TRAIN" = false ]; then
     echo ""
