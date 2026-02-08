@@ -83,38 +83,34 @@ def run_benchmark_matrix(
     for bs in batch_sizes:
         shape = (bs, num_channels, img_size, img_size)
 
-        # PyTorch CPU
-        console.print(f"  PyTorch CPU  bs={bs}...", end=" ")
-        r = benchmark_model(wrapped, shape, "pytorch", "cpu", num_runs, warmup_runs, "fp32")
-        results.append(r)
-        console.print(f"P50={r.latency_p50_ms:.1f}ms")
-
-        # PyTorch GPU
         if has_cuda:
+            # GPU benchmarks
             console.print(f"  PyTorch GPU  bs={bs}...", end=" ")
             r = benchmark_model(wrapped, shape, "pytorch", "cuda", num_runs, warmup_runs, "fp32")
             results.append(r)
             console.print(f"P50={r.latency_p50_ms:.1f}ms")
 
-        # ORT CPU FP32
-        console.print(f"  ORT CPU FP32 bs={bs}...", end=" ")
-        r = benchmark_model(onnx_fp32_path, shape, "ort", "cpu", num_runs, warmup_runs, "fp32")
-        results.append(r)
-        console.print(f"P50={r.latency_p50_ms:.1f}ms")
-
-        # ORT CPU INT8
-        if onnx_int8_path and onnx_int8_path.exists():
-            console.print(f"  ORT CPU INT8 bs={bs}...", end=" ")
-            r = benchmark_model(onnx_int8_path, shape, "ort", "cpu", num_runs, warmup_runs, "int8")
-            results.append(r)
-            console.print(f"P50={r.latency_p50_ms:.1f}ms")
-
-        # ORT GPU FP32
-        if has_cuda:
             console.print(f"  ORT GPU FP32 bs={bs}...", end=" ")
             r = benchmark_model(onnx_fp32_path, shape, "ort", "cuda", num_runs, warmup_runs, "fp32")
             results.append(r)
             console.print(f"P50={r.latency_p50_ms:.1f}ms")
+        else:
+            # CPU fallback only when no GPU
+            console.print(f"  PyTorch CPU  bs={bs}...", end=" ")
+            r = benchmark_model(wrapped, shape, "pytorch", "cpu", num_runs, warmup_runs, "fp32")
+            results.append(r)
+            console.print(f"P50={r.latency_p50_ms:.1f}ms")
+
+            console.print(f"  ORT CPU FP32 bs={bs}...", end=" ")
+            r = benchmark_model(onnx_fp32_path, shape, "ort", "cpu", num_runs, warmup_runs, "fp32")
+            results.append(r)
+            console.print(f"P50={r.latency_p50_ms:.1f}ms")
+
+            if onnx_int8_path and onnx_int8_path.exists():
+                console.print(f"  ORT CPU INT8 bs={bs}...", end=" ")
+                r = benchmark_model(onnx_int8_path, shape, "ort", "cpu", num_runs, warmup_runs, "int8")
+                results.append(r)
+                console.print(f"P50={r.latency_p50_ms:.1f}ms")
 
     return results
 
