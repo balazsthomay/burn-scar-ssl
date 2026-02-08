@@ -1,0 +1,28 @@
+# Phase 5: Deployment Configuration
+# ONNX export, quantization, and benchmarking
+
+project: "burn-scar-ssl"
+output_dir: "outputs/phase5"
+seed: 42
+
+# Data (for accuracy evaluation)
+data:
+  dataset_path: "data/hls_burn_scars"
+
+# ONNX export settings
+export:
+  img_size: 512
+  num_channels: 6
+  opset_version: 17
+
+# Benchmark settings
+benchmark:
+  batch_sizes: [1, 4, 8]
+  num_runs: 200
+  warmup_runs: 20
+
+# Accuracy evaluation settings
+accuracy:
+  dataset_path: "data/hls_burn_scars"
+  batch_size: 4
+  num_workers: 4
