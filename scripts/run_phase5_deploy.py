@@ -27,6 +27,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+import onnxruntime as ort
 import torch
 import yaml
 from rich.console import Console
@@ -84,16 +85,19 @@ def run_benchmark_matrix(
         shape = (bs, num_channels, img_size, img_size)
 
         if has_cuda:
-            # GPU benchmarks
+            # PyTorch GPU benchmark
             console.print(f"  PyTorch GPU  bs={bs}...", end=" ")
             r = benchmark_model(wrapped, shape, "pytorch", "cuda", num_runs, warmup_runs, "fp32")
             results.append(r)
             console.print(f"P50={r.latency_p50_ms:.1f}ms")
 
-            console.print(f"  ORT GPU FP32 bs={bs}...", end=" ")
-            r = benchmark_model(onnx_fp32_path, shape, "ort", "cuda", num_runs, warmup_runs, "fp32")
-            results.append(r)
-            console.print(f"P50={r.latency_p50_ms:.1f}ms")
+            # ORT GPU only if CUDAExecutionProvider is actually available
+            ort_providers = ort.get_available_providers()
+            if "CUDAExecutionProvider" in ort_providers:
+                console.print(f"  ORT GPU FP32 bs={bs}...", end=" ")
+                r = benchmark_model(onnx_fp32_path, shape, "ort", "cuda", num_runs, warmup_runs, "fp32")
+                results.append(r)
+                console.print(f"P50={r.latency_p50_ms:.1f}ms")
         else:
             # CPU fallback only when no GPU
             console.print(f"  PyTorch CPU  bs={bs}...", end=" ")
