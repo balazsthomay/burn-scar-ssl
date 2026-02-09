@@ -279,7 +279,7 @@ def main():
         console.print(f"\n[bold blue]Stage 5: Accuracy evaluation...[/bold blue]")
         dataset_path = accuracy_cfg.get("dataset_path", config.get("data", {}).get("dataset_path", "data/hls_burn_scars"))
 
-        from src.data.dataset import HLSBurnScarsDataModule
+        from src.data.dataset import BAND_MEANS, BAND_STDS, HLSBurnScarsDataModule
 
         dm = HLSBurnScarsDataModule(
             dataset_path=dataset_path,
@@ -289,14 +289,18 @@ def main():
         datamodule = dm.build()
 
         console.print(f"  Evaluating FP32 ONNX...")
-        fp32_acc = evaluate_onnx_accuracy(onnx_fp32_path, datamodule)
+        fp32_acc = evaluate_onnx_accuracy(
+            onnx_fp32_path, datamodule, means=BAND_MEANS, stds=BAND_STDS,
+        )
         console.print(
             f"  FP32 — mIoU: {fp32_acc['miou']:.4f}, "
             f"Burn scar IoU: {fp32_acc['iou_burn_scar']:.4f}"
         )
 
         console.print(f"  Evaluating INT8 ONNX...")
-        int8_acc = evaluate_onnx_accuracy(onnx_int8_path, datamodule)
+        int8_acc = evaluate_onnx_accuracy(
+            onnx_int8_path, datamodule, means=BAND_MEANS, stds=BAND_STDS,
+        )
         console.print(
             f"  INT8 — mIoU: {int8_acc['miou']:.4f}, "
             f"Burn scar IoU: {int8_acc['iou_burn_scar']:.4f}"

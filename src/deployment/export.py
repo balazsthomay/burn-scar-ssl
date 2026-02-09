@@ -384,6 +384,8 @@ def evaluate_onnx_accuracy(
     onnx_path: str | Path,
     datamodule,
     num_classes: int = 2,
+    means: list[float] | None = None,
+    stds: list[float] | None = None,
 ) -> dict:
     """Evaluate ONNX model accuracy on a test set.
 
@@ -391,12 +393,24 @@ def evaluate_onnx_accuracy(
         onnx_path: Path to the ONNX model file.
         datamodule: A Lightning DataModule (already setup). Must have ``test_dataloader()``.
         num_classes: Number of segmentation classes.
+        means: Per-band means for normalization. Required because TerraTorch
+            normalizes in ``on_after_batch_transfer`` which doesn't run
+            without a Trainer context.
+        stds: Per-band stds for normalization.
 
     Returns:
         Dict with per-class IoU and mIoU.
     """
     session = ort.InferenceSession(str(onnx_path))
     input_name = session.get_inputs()[0].name
+
+    # Build normalization arrays (B, C, 1, 1) for broadcasting
+    if means is not None and stds is not None:
+        means_arr = np.array(means, dtype=np.float32).reshape(1, -1, 1, 1)
+        stds_arr = np.array(stds, dtype=np.float32).reshape(1, -1, 1, 1)
+    else:
+        means_arr = None
+        stds_arr = None
 
     # Accumulate intersection and union per class
     intersection_sum = np.zeros(num_classes, dtype=np.float64)
@@ -406,6 +420,11 @@ def evaluate_onnx_accuracy(
     for batch in datamodule.test_dataloader():
         images = batch["image"].numpy()
         masks = batch["mask"].numpy()
+
+        # TerraTorch normalizes in on_after_batch_transfer (Lightning hook),
+        # which doesn't fire without a Trainer. Apply manually.
+        if means_arr is not None:
+            images = (images - means_arr) / stds_arr
 
         logits = session.run(None, {input_name: images})[0]
         preds = np.argmax(logits, axis=1)
