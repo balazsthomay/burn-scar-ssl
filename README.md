@@ -13,6 +13,10 @@ Near-supervised burn scar segmentation from 10% labels using semi-supervised lea
 | SSL + FixMatch (Prithvi) | 10% | 67.6% | 82.0% | Semi-supervised |
 | LoRA r=8 (Prithvi) | 10% | 64.1% | 79.9% | Parameter-efficient |
 
+**Qualitative predictions** across diverse burn scar coverage (0% to 45%+):
+
+![Prediction Grid](docs/figures/prediction_grid.png)
+
 **Deployment**: INT8 quantized ONNX model at 373MB (3.3x compression), 22.8ms latency on GPU, with <0.04% IoU loss vs FP32.
 
 | Format | Size | Burn Scar IoU | GPU Latency (p50) |
@@ -28,6 +32,8 @@ This project progresses through 6 phases, each building on the last:
 **Phase 1 -- Baseline**: Established the data pipeline for the [HLS Burn Scars](https://huggingface.co/datasets/nasa-impact/hls_burn_scars) dataset (804 tiles, 6 HLS bands, 512x512 px). Built the training loop on TerraTorch with Prithvi-EO-v2-300 as the backbone encoder and a UNet decoder.
 
 **Phase 2 -- Label Efficiency Sweep**: Measured performance at 10%, 25%, 50%, and 100% label fractions to establish the ceiling (100% labels) and floor (10% labels) for the SSL experiments.
+
+![Label Efficiency Curves](docs/figures/label_efficiency_curves.png)
 
 **Phase 3 -- Semi-Supervised Learning**: Implemented FixMatch-style consistency regularization with EMA teacher, strong/weak augmentation pairs, and CutMix. At 10% labels, SSL pushes burn scar IoU from the supervised baseline toward the semi-supervised regime.
 
