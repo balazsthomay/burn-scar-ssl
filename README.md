@@ -75,7 +75,7 @@ uv run scripts/run_demo.py --onnx outputs/phase5/lora_r16/model_fp32.int8.onnx -
 ### Install
 
 ```bash
-git clone <repo-url> && cd burn-scar-ssl
+git clone https://github.com/balazsthomay/burn-scar-ssl && cd burn-scar-ssl
 uv sync
 ```
 
